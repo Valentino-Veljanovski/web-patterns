@@ -1,0 +1,29 @@
+# robots.txt — example — adapt the paths and the sitemap URL to the site.
+# A static host serves this file as is; a Next app generates it from app/robots.ts.
+# Rules per bot, then the disallow list for everyone, then the sitemap. Notes: docs/seo.md.
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /logs/
+Disallow: /vendor/
+Disallow: /.git/
+Disallow: /.env
+Disallow: /config.php
+Disallow: /*?debug*
+Disallow: /*?test*
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: dotbot
+Disallow: /
+
+Sitemap: https://example.com/sitemap.xml

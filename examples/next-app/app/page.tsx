@@ -21,6 +21,18 @@ export default function IndexPage() {
         <li>
           <Link href="/diagrams">Diagrams</Link>: two ArchitectureDiagram instances, one of them empty
         </li>
+        <li>
+          <Link href="/navigation">Navigation</Link>: a card that navigates through a view transition
+        </li>
+        <li>
+          <Link href="/seo">SEO</Link>: page metadata, JSON-LD, and the generated sitemap, robots and manifest
+        </li>
+        <li>
+          <Link href="/contact">Contact</Link>: the contact route with a recording transport, no mail is sent
+        </li>
+        <li>
+          <Link href="/chat">Chat</Link>: the on-page assistant, answering without a request
+        </li>
       </ul>
     </>
   );

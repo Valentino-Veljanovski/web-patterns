@@ -112,3 +112,59 @@ h2 {
     animation: none;
   }
 }
+
+/* G2b pages */
+.cards {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+a.card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+a.card h2 {
+  margin-top: 0;
+}
+.contact-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 32rem;
+  margin: 1.5rem 0;
+}
+.contact-form label {
+  display: grid;
+  gap: 0.25rem;
+}
+.contact-form input,
+.contact-form textarea {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+}
+.contact-form button {
+  justify-self: start;
+  padding: 0.5rem 1rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+:root {
+  --chat-bg: #111827;
+  --chat-fg: var(--fg);
+  --chat-accent: #0f766e;
+  --chat-border: var(--line);
+}

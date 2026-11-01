@@ -1,12 +1,10 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { createSiteMetadata } from "web-patterns/seo";
+import { site } from "./site";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "web-patterns example",
-  description: "Every web-patterns component rendered in a Next 16 App Router app. Built in CI as the host proof.",
-};
+export const metadata = createSiteMetadata(site);
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -18,6 +16,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Link href="/scroll">Scroll</Link>
           <Link href="/graphics">Graphics</Link>
           <Link href="/diagrams">Diagrams</Link>
+          <Link href="/navigation">Navigation</Link>
+          <Link href="/seo">SEO</Link>
+          <Link href="/contact">Contact</Link>
+          <Link href="/chat">Chat</Link>
         </nav>
         <main>{children}</main>
       </body>

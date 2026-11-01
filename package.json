@@ -1,7 +1,7 @@
 {
   "name": "web-patterns",
   "version": "0.1.0",
-  "description": "React and Next.js front-end patterns re-implemented from two live websites and two prototypes: motion, scroll, graphics and diagram components with reduced-motion handling and a host proof in a built Next 16 app.",
+  "description": "React and Next.js front-end patterns re-implemented from two live websites and two prototypes: motion, scroll, graphics, diagrams, navigation, SEO, a contact route, hosting files and an on-page assistant, with reduced-motion handling and a host proof in a built Next 16 app.",
   "type": "module",
   "license": "MIT",
   "author": "Valentino Veljanovski",
@@ -17,7 +17,12 @@
     "./motion": "./src/motion/index.ts",
     "./scroll": "./src/scroll/index.ts",
     "./graphics": "./src/graphics/index.ts",
-    "./diagrams": "./src/diagrams/index.ts"
+    "./diagrams": "./src/diagrams/index.ts",
+    "./navigation": "./src/navigation/index.ts",
+    "./seo": "./src/seo/index.ts",
+    "./contact": "./src/contact/index.ts",
+    "./chat": "./src/chat/index.ts",
+    "./hosting/*": "./src/hosting/*"
   },
   "files": [
     "src"

@@ -2,9 +2,9 @@
 /**
  * Host proof: the built example app, served by `next start`, opened in
  * Chromium with reduced motion on and off. vitest proves the logic; only
- * this proves the host. Run `npm run build --workspace examples/next-app`
- * first. Every measured value is printed; the process exits 1 on any
- * failed check.
+ * this proves the host. H1-H6 cover the G2a pages, H7-H10 navigation, seo,
+ * contact and chat. Run `npm run build --workspace examples/next-app` first.
+ * Every measured value is printed; the process exits 1 on any failed check.
  */
 import { spawn } from "node:child_process";
 import net from "node:net";
@@ -15,7 +15,7 @@ import { chromium } from "playwright";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const appDir = path.join(root, "examples", "next-app");
 const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
-const PAGES = ["/", "/motion", "/scroll", "/graphics", "/diagrams"];
+const PAGES = ["/", "/motion", "/scroll", "/graphics", "/diagrams", "/navigation", "/navigation/target", "/seo", "/contact", "/chat"];
 const CONTEXTS = ["reduce", "no-preference"];
 const VIEWPORT = { width: 1440, height: 900 };
 
@@ -246,6 +246,122 @@ async function graphics(mode, p) {
   }
 }
 
+async function navigation(mode, p) {
+  const { page } = p;
+  const start = Date.now();
+  await page.click("[data-nav-card]");
+  let arrived = false;
+  try {
+    await page.waitForURL("**/navigation/target", { timeout: 2000 });
+    arrived = true;
+  } catch {
+    arrived = false;
+  }
+  const ms = Date.now() - start;
+  const vt = await page.evaluate(() => document.documentElement.getAttribute("data-vt"));
+  const heading = await page.$eval("[data-nav-target]", (el) => el.textContent ?? "").catch(() => "");
+  check(`H7 /navigation [${mode}] card click reaches /navigation/target within 2 s`, arrived && heading === "Target page", `url=${page.url()} after=${ms}ms heading="${heading}"`);
+  const expected = mode === "reduce" ? "skipped" : "used";
+  check(`H7 /navigation [${mode}] startViewTransition ${expected}`, vt === expected, `data-vt=${vt}`);
+}
+
+async function seo(mode, p, base) {
+  const { page } = p;
+  const raw = await page.$eval('script[type="application/ld+json"]', (el) => el.textContent ?? "").catch(() => "");
+  let type = "";
+  let parsed = false;
+  try {
+    const data = JSON.parse(raw);
+    parsed = true;
+    type = data["@type"];
+  } catch {
+    parsed = false;
+  }
+  check(`H8 /seo [${mode}] JSON-LD parses with @type Person`, parsed && type === "Person", `parsed=${parsed} type=${type} bytes=${raw.length}`);
+  const canonical = await page.$eval('link[rel="canonical"]', (el) => el.getAttribute("href") ?? "").catch(() => "");
+  check(`H8 /seo [${mode}] canonical link set from the page path`, canonical === "https://web-patterns.example/seo", `canonical=${canonical}`);
+  const files = [
+    ["/sitemap.xml", /^application\/xml/, "<urlset"],
+    ["/robots.txt", /^text\/plain/, "Sitemap: https://web-patterns.example/sitemap.xml"],
+    ["/manifest.webmanifest", /^application\/manifest\+json/, '"start_url":"/"'],
+  ];
+  for (const [route, typeRe, needle] of files) {
+    const res = await fetch(base + route);
+    const ct = res.headers.get("content-type") ?? "";
+    const body = await res.text();
+    check(`H8 ${route} [${mode}] 200 with the expected content type and content`, res.status === 200 && typeRe.test(ct) && body.includes(needle), `status=${res.status} type="${ct}" bytes=${body.length}`);
+  }
+}
+
+async function contact(mode, p) {
+  const { page } = p;
+  await page.click("[data-contact-form] button[type=submit]");
+  let ok = false;
+  try {
+    await page.waitForSelector('[data-contact-status="200"] [data-contact-payload]', { timeout: 3000 });
+    ok = true;
+  } catch {
+    ok = false;
+  }
+  const payload = ok ? await page.$eval("[data-contact-payload]", (el) => el.textContent ?? "") : "";
+  let shape = false;
+  try {
+    const data = JSON.parse(payload);
+    shape = data.saveToSentItems === true && data.message.body.contentType === "HTML" && data.message.toRecipients[0].emailAddress.address === "inbox@example.com";
+  } catch {
+    shape = false;
+  }
+  check(`H9 /contact [${mode}] valid body → 200 and the recorded payload shown`, ok && shape, `status200=${ok} shape=${shape} bytes=${payload.length}`);
+
+  await page.fill('[data-contact-form] input[name="email"]', "not an address");
+  await page.click("[data-contact-form] button[type=submit]");
+  let bad = "";
+  try {
+    await page.waitForSelector('[data-contact-status="400"]', { timeout: 3000 });
+    bad = await page.$eval('[data-contact-status="400"] [data-contact-message]', (el) => el.textContent ?? "");
+  } catch {
+    bad = "";
+  }
+  check(`H9 /contact [${mode}] bad email → 400 message shown`, bad.includes("invalid_email") && bad.includes("email"), `message="${bad}"`);
+  // The 400 above is the expected answer of the route, not a failed request of the page;
+  // Chromium also logs it as a console error ("Failed to load resource ... 400").
+  p.failedRequests = p.failedRequests.filter((r) => !/\/api\/contact HTTP 400$/.test(r));
+  p.consoleErrors = p.consoleErrors.filter((e) => !/status of 400/.test(e));
+}
+
+async function chat(mode, p) {
+  const { page } = p;
+  const requests = [];
+  const onRequest = (r) => {
+    const type = r.resourceType();
+    if (type !== "xhr" && type !== "fetch") return;
+    const prefetch = r.headers()["next-router-prefetch"] !== undefined;
+    requests.push(`${type} ${r.url()}${prefetch ? " (next prefetch)" : ""}`);
+  };
+  page.on("request", onRequest);
+  await page.click('button[aria-expanded="false"]');
+  await page.fill('section[role="dialog"] input[type="text"]', "music");
+  await page.press('section[role="dialog"] input[type="text"]', "Enter");
+  let answered = false;
+  try {
+    await page.waitForFunction(
+      () => Array.from(document.querySelectorAll('[data-chat-message="assistant"]')).some((el) => (el.textContent ?? "").includes("featured songs")),
+      null,
+      { timeout: 2000 },
+    );
+    answered = true;
+  } catch {
+    answered = false;
+  }
+  await sleep(500);
+  page.off("request", onRequest);
+  const count = await page.$$eval("[data-chat-message]", (els) => els.length);
+  check(`H10 /chat [${mode}] "music" gets the source answer`, answered, `answered=${answered} messages=${count}`);
+  const own = requests.filter((r) => !r.endsWith("(next prefetch)"));
+  check(`H10 /chat [${mode}] zero XHR/fetch requests after opening the widget`, own.length === 0, `xhr/fetch=${own.length} nextLinkPrefetch=${requests.length - own.length}`);
+  for (const r of own) console.log(`     ${r}`);
+}
+
 async function main() {
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
@@ -265,6 +381,10 @@ async function main() {
         if (route === "/diagrams") await diagrams(mode, p);
         if (route === "/scroll") await scroll(mode, p);
         if (route === "/graphics") await graphics(mode, p);
+        if (route === "/navigation") await navigation(mode, p);
+        if (route === "/seo") await seo(mode, p, base);
+        if (route === "/contact") await contact(mode, p);
+        if (route === "/chat") await chat(mode, p);
         await sleep(100);
         reportH1(mode, route, p);
         await p.page.close();
