@@ -1,0 +1,114 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0f17;
+  --fg: #e5e7eb;
+  --muted: #9ca3af;
+  --line: #1f2937;
+  --accent: #00d4a1;
+
+  /* web-patterns theming hooks */
+  --reading-progress-color: var(--accent);
+  --btt-color: var(--accent);
+  --btt-border: rgba(0, 212, 161, 0.5);
+  --btt-bg: rgba(11, 15, 23, 0.8);
+  --ad-accent: var(--accent);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+nav a,
+main a {
+  color: var(--accent);
+}
+
+main {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 8rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  margin: 0 0 1rem;
+}
+
+h2 {
+  margin-top: 3rem;
+}
+
+.lead {
+  font-size: 1.25rem;
+  color: var(--muted);
+}
+
+.spacer {
+  height: 120vh;
+}
+
+.hero {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+.hero-content {
+  position: relative;
+}
+
+.card {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+}
+
+/* SplitText entrance; the component only sets the per-grapheme delay. */
+.splittext-char {
+  animation: splittext-in 0.5s ease both;
+}
+
+@keyframes splittext-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-back-to-top]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splittext-char {
+    animation: none;
+  }
+}
