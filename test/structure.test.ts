@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
@@ -74,29 +75,33 @@ describe("R3 forbidden strings", () => {
     expect(FORBIDDEN[7]?.split(" ")).toEqual(["backend", "developer"]);
   });
 
-  // G2a excluded package-lock.json without a reason; the sweep now covers it too.
-  it("no forbidden string anywhere in the repository, package-lock.json included", () => {
-    const files = listFiles(ROOT)
-      .filter(isText)
-      .filter((f) => rel(f) !== "test/structure.test.ts");
-    expect(files.map(rel)).toContain("package-lock.json");
+  // Every file git tracks, as repo-relative paths. Only binary extensions are skipped; no file is
+  // excluded by name, this one included: the list above is encoded so that it can be swept too.
+  const BINARY = /\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|pdf)$/i;
+  const trackedFiles = () =>
+    execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" })
+      .split("\0")
+      .filter((f) => f !== "" && !BINARY.test(f));
+
+  it("no forbidden string in any tracked file", () => {
+    const files = trackedFiles();
+    // Guard: fails if this file is excluded again or the sweep goes back to an extension allow-list.
+    expect(files).toEqual(
+      expect.arrayContaining(["test/structure.test.ts", "package-lock.json", "LICENSE", ".gitignore", ".github/workflows/ci.yml"]),
+    );
     const hits: string[] = [];
     for (const f of files) {
-      const body = readFileSync(f, "utf8").toLowerCase();
+      const body = readFileSync(join(ROOT, f), "utf8").toLowerCase();
       for (const s of FORBIDDEN) {
-        if (body.includes(s.toLowerCase())) hits.push(`${rel(f)}: ${s}`);
+        if (body.includes(s.toLowerCase())) hits.push(`${f}: ${s}`);
       }
     }
     expect(hits).toEqual([]);
   });
 
-  it('"Backend Developer" has zero hits in any case', () => {
+  it("the retired example-role string has zero hits in any case", () => {
     const needle = decode("YmFja2VuZCBkZXZlbG9wZXI=");
-    const hits = listFiles(ROOT)
-      .filter(isText)
-      .filter((f) => rel(f) !== "test/structure.test.ts")
-      .filter((f) => readFileSync(f, "utf8").toLowerCase().includes(needle))
-      .map(rel);
+    const hits = trackedFiles().filter((f) => readFileSync(join(ROOT, f), "utf8").toLowerCase().includes(needle));
     expect(hits).toEqual([]);
   });
 });
